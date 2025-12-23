@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ergometer.Live - PM5 Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header with connection status -->
+        <header>
+            <h1>Ergometer.Live</h1>
+            <div id="status-bar">
+                <span id="connection-status" class="status-disconnected">Disconnected</span>
+                <span id="device-info"></span>
+            </div>
+        </header>
+
+        <!-- Workout Controls -->
+        <section id="controls">
+            <h2>Workout Setup</h2>
+
+            <div class="control-group">
+                <label class="radio-label">
+                    <input type="radio" name="workout-type" value="just_row" checked>
+                    <span>Just Row</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="workout-type" value="fixed_distance">
+                    <span>Fixed Distance</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="workout-type" value="fixed_time">
+                    <span>Fixed Time</span>
+                </label>
+            </div>
+
+            <!-- Fixed Distance Options -->
+            <div id="distance-options" class="workout-options" style="display:none;">
+                <div class="input-group">
+                    <label>Distance (m):</label>
+                    <input type="number" id="distance" placeholder="2000" value="2000" min="100" step="100">
+                </div>
+                <div class="input-group">
+                    <label>Split Distance (m):</label>
+                    <input type="number" id="split-distance" placeholder="500" value="500" min="0" step="100">
+                </div>
+            </div>
+
+            <!-- Fixed Time Options -->
+            <div id="time-options" class="workout-options" style="display:none;">
+                <div class="input-group">
+                    <label>Minutes:</label>
+                    <input type="number" id="time-minutes" placeholder="20" value="20" min="0" max="999">
+                </div>
+                <div class="input-group">
+                    <label>Seconds:</label>
+                    <input type="number" id="time-seconds" placeholder="0" value="0" min="0" max="59">
+                </div>
+                <div class="input-group">
+                    <label>Split Time (s):</label>
+                    <input type="number" id="split-time" placeholder="60" value="60" min="0" step="10">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="start-workout" class="btn btn-primary">Start Workout</button>
+                <button id="stop-workout" class="btn btn-danger" disabled>Stop Workout</button>
+            </div>
+        </section>
+
+        <!-- Live Stats Display -->
+        <section id="stats">
+            <h2>Live Stats</h2>
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="time">0:00.0</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Distance</div>
+                    <div class="stat-value" id="distance-val">0 m</div>
+                </div>
+
+                <div class="stat-box highlight">
+                    <div class="stat-label">Pace</div>
+                    <div class="stat-value" id="pace">--:--</div>
+                    <div class="stat-unit">/500m</div>
+                </div>
+
+                <div class="stat-box highlight">
+                    <div class="stat-label">Power</div>
+                    <div class="stat-value" id="power">0</div>
+                    <div class="stat-unit">watts</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Stroke Rate</div>
+                    <div class="stat-value" id="stroke-rate">0</div>
+                    <div class="stat-unit">spm</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Calories</div>
+                    <div class="stat-value" id="calories">0</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Heart Rate</div>
+                    <div class="stat-value" id="heart-rate">--</div>
+                    <div class="stat-unit">bpm</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">Avg Pace</div>
+                    <div class="stat-value" id="avg-pace">--:--</div>
+                    <div class="stat-unit">/500m</div>
+                </div>
+            </div>
+
+            <div class="state-info">
+                <span class="state-badge" id="workout-state">Ready</span>
+                <span class="state-badge" id="rowing-state">Inactive</span>
+            </div>
+        </section>
+
+        <!-- Log Messages -->
+        <section id="log-section">
+            <h3>Messages</h3>
+            <div id="log"></div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
