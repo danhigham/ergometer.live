@@ -6,14 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/danhigham/ergometer.live/server"
+	"github.com/danhigham/ergometer.live/socketserver"
 )
 
 func main() {
 	log.Println("Starting Ergometer.Live WebSocket Server...")
 
 	// Create server
-	srv := server.NewServer(":8080")
+	srv := socketserver.NewServer(":8080")
 
 	// Setup graceful shutdown
 	sigChan := make(chan os.Signal, 1)
