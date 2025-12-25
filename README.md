@@ -1,49 +1,133 @@
-# Ergometer.Live - PM5 WebSocket Server
+# Ergometer.Live
 
-A real-time WebSocket server for Concept2 PM5 rowing machines that provides live workout data streaming to web clients.
+A full-stack real-time workout tracking application for Concept2 PM5 rowing machines with dual-mode support (online/local) and customizable widget dashboards.
 
 ## Features
 
-- Real-time workout statistics streaming via WebSocket
-- Support for multiple concurrent clients
-- Adaptive polling (100ms during workouts, 1s when idle)
-- Web-based test interface for controlling and monitoring workouts
-- Support for multiple workout types:
+### Current (Phase 1)
+- **Dual-Mode Authentication**: Google OAuth (online) or local-only mode
+- **Real-time WebSocket**: Live workout data streaming from PM5 device
+- **REST API**: Firebase-authenticated backend for data persistence
+- **Vue 3 Frontend**: Modern reactive UI with TypeScript
+- **Multiple Workout Types**:
   - Just Row (free rowing with optional splits)
   - Fixed Distance (e.g., 2000m with 500m splits)
   - Fixed Time (e.g., 20min with 60s splits)
 
+### Coming Soon
+- Customizable widget dashboards with drag-and-drop
+- Cloud workout history and analytics (online mode)
+- Browser-based storage (local mode)
+- Multiple named dashboard views
+
 ## Architecture
 
-- **Broadcast Hub**: Fan-out WebSocket broadcast with buffered channels
-- **PM5 Manager**: Singleton managing USB device connection and control
-- **Monitor Goroutine**: Adaptive polling for real-time stats
-- **Web Interface**: Simple HTML/CSS/JS test client
+```
+┌─────────────┐     WebSocket      ┌──────────────┐
+│   Browser   │ ←─────────────────→ │  WebSocket   │
+│  (Vue 3)    │                     │  Server      │
+│             │     REST API        │  :8080       │
+│             │ ←─────────────────→ │  (Go)        │
+└─────────────┘                     └──────────────┘
+                                           ↓
+                                     PM5 Device
+                                      (USB/HID)
+
+┌─────────────┐     REST API       ┌──────────────┐
+│   Browser   │ ←─────────────────→ │  REST API    │
+│             │                     │  Server      │
+│             │                     │  :3000       │
+│             │                     │  (Go)        │
+└─────────────┘                     └──────┬───────┘
+                                           │
+                    ┌──────────────────────┼───────────────┐
+                    ↓                      ↓               ↓
+              Firebase Auth          InfluxDB       (Future: PostgreSQL)
+              (Google OAuth)         (Workouts)     (User metadata)
+```
+
+### Components
+- **WebSocket Server** (port 8080): Real-time PM5 data streaming
+- **REST API Server** (port 3000): Authentication, data persistence
+- **Vue 3 Frontend** (port 5173): User interface with auth and widgets
+- **PM5 Manager**: USB device control with adaptive polling
+- **Broadcast Hub**: Fan-out WebSocket broadcast system
 
 ## Requirements
 
-- Go 1.21 or later
+- Go 1.23 or later
+- Node.js 20+ and npm
 - USB connection to Concept2 PM5 rowing machine
+- tmux (recommended for development)
 - macOS, Linux, or Windows
 
-## Building
+## Quick Start (Development)
 
+### 1. Install tmux (if not installed)
 ```bash
-go mod tidy
-go build -o ergometer-live
+brew install tmux  # macOS
+# or
+apt-get install tmux  # Linux
 ```
 
-## Running
+### 2. Set up environment files
 
+**Frontend** (`ui/.env`):
 ```bash
-./ergometer-live
+cd ui
+cp .env.example .env
+# Edit .env with your Firebase credentials
 ```
 
-The server will start on port 8080. Open your web browser to:
+**Backend** (`api/.env`):
+```bash
+cd api
+cp .env.example .env
+# Edit .env with your Firebase and InfluxDB credentials
+```
 
+### 3. Install frontend dependencies
+```bash
+cd ui
+npm install
 ```
-http://localhost:8080
+
+### 4. Start all services with tmux
+```bash
+./start-dev.sh
 ```
+
+This launches all three services in a single tmux session:
+- **WebSocket Server** (left pane): `localhost:8080`
+- **REST API Server** (top-right pane): `localhost:3000`
+- **Vue Frontend** (bottom-right pane): `localhost:5173`
+
+### tmux Quick Reference
+- **Switch panes**: `Ctrl+b` then arrow keys
+- **Detach session**: `Ctrl+b` then `d`
+- **Reattach**: `./start-dev.sh` (or `tmux attach -t ergometer-dev`)
+- **Stop all services**: `./stop-dev.sh`
+
+### Manual Start (without tmux)
+
+**Terminal 1 - WebSocket Server:**
+```bash
+go run main.go
+```
+
+**Terminal 2 - REST API Server:**
+```bash
+cd api
+go run main.go
+```
+
+**Terminal 3 - Vue Frontend:**
+```bash
+cd ui
+npm run dev
+```
+
+Then open your browser to `http://localhost:5173`
 
 ## WebSocket API
 
@@ -124,8 +208,10 @@ http://localhost:8080
 
 ```
 ergometer.live/
-├── main.go                  # Entry point
-├── server/                  # HTTP & WebSocket server
+├── main.go                  # WebSocket server entry point
+├── start-dev.sh             # tmux launcher for all services
+├── stop-dev.sh              # Stop all services
+├── socketserver/            # HTTP & WebSocket server
 │   ├── server.go
 │   ├── websocket.go
 │   └── handler.go
@@ -135,19 +221,54 @@ ergometer.live/
 ├── broadcast/               # WebSocket broadcast hub
 │   ├── hub.go
 │   └── client.go
-└── web/                     # Test web interface
-    ├── index.html
-    ├── app.js
-    └── styles.css
+├── web/                     # Static test pages
+│   ├── index.html
+│   └── test.html
+├── api/                     # REST API server (NEW)
+│   ├── main.go
+│   ├── config/              # Configuration
+│   ├── middleware/          # Auth, CORS, logging
+│   ├── services/            # Firebase, InfluxDB
+│   ├── handlers/            # HTTP handlers
+│   └── models/              # Data models
+└── ui/                      # Vue 3 frontend (NEW)
+    ├── src/
+    │   ├── views/           # Page components
+    │   ├── components/      # Reusable components
+    │   ├── stores/          # Pinia state stores
+    │   ├── services/        # Firebase, API client
+    │   └── router/          # Vue Router config
+    └── package.json
 ```
 
-## Development
+## Development Notes
 
-The server uses the local `usb-interface` library via Go module replace directive:
+### Firebase Setup
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Enable Google Authentication
+3. Get your web app config (apiKey, authDomain, projectId)
+4. Download service account JSON for backend
+5. Update environment files with credentials
+
+### InfluxDB Setup (Optional - Phase 3+)
+
+1. Create account at https://cloud2.influxdata.com
+2. Create bucket: `ergometer-workouts`
+3. Generate API token with read/write access
+4. Update `api/.env` with credentials
+
+### Local USB Interface
+
+The WebSocket server uses the local `usb-interface` library:
 
 ```go
 replace github.com/danhigham/pm5 => ../usb-interface
 ```
+
+## Contributing
+
+See the implementation plan at `.claude/plans/` for upcoming features and architecture decisions.
 
 ## License
 
